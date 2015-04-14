@@ -12,8 +12,16 @@
 #include "paroc_combox_factory.h"
 #include "paroc_exception.h"
 
+#define ITER 100
+
+// Note: XDR only supports these limits (8 bytes long)
+#define _LONG_MAX     2147483647L
+#define _LONG_MIN      (-_LONG_MAX - 1L)
+#define _ULONG_MAX    4294967295UL
+
+
 template<typename T>void testByVect(paroc_buffer* xp_bufferOut, paroc_combox* xp_comboxOut, paroc_connection* xp_connectionOut, 
-                                    paroc_buffer* xp_bufferIn,  paroc_combox* xp_comboxIn,  paroc_connection* xp_connectionIn, const std::vector<T>& x_vect){
+                                    paroc_buffer* xp_bufferIn,  paroc_combox* xp_comboxIn,  paroc_connection* xp_connectionIn, const std::vector<T>& x_vect, bool x_testArray){
 
     for(const auto& elem : x_vect)
     {
@@ -27,9 +35,9 @@ template<typename T>void testByVect(paroc_buffer* xp_bufferOut, paroc_combox* xp
             std::cout<<__LINE__<<std::endl;
         }
         xp_bufferIn->UnPack(&test,1);
+        // std::cout<<elem<<" == "<<test<<std::endl;
         TS_ASSERT(elem == test);
     }
-    return; // TODO
 
     // Pack/unpack the vector as a whole
     std::vector<T> vectTest;
@@ -45,16 +53,35 @@ template<typename T>void testByVect(paroc_buffer* xp_bufferOut, paroc_combox* xp
         TS_ASSERT(elem == *it);
         it++;
     }
+
+
+    if(x_testArray)
+    {
+        // Test with old-school arrays
+        T* arr1 = static_cast<T*>(malloc(x_vect.size() * sizeof(T)));
+        T* arr2 = static_cast<T*>(malloc(x_vect.size() * sizeof(T)));
+        T* parr = arr1;
+        for(const auto& elem : x_vect)
+        {
+            *parr = elem;
+            parr++;
+        }
+        xp_bufferOut->Pack(arr1,x_vect.size());
+        xp_bufferIn->UnPack(arr2,x_vect.size());
+        free(arr1);
+        free(arr2);
+    }
 }
 
 template<typename T>void testByType(paroc_buffer* xp_bufferOut, paroc_combox* xp_comboxOut, paroc_connection* xp_connectionOut, 
                                     paroc_buffer* xp_bufferIn,  paroc_combox* xp_comboxIn,  paroc_connection* xp_connectionIn, const T& x_min, const T& x_max, const T& x_incr){
     std::vector<T> vectTest;
-    for(T elem = x_min ; elem < x_max ; elem += x_incr)
+    for(T elem = x_min ; elem < x_max - 2 * x_incr ; elem += x_incr) // this break condition avoids inf loops due to overflows
     {
+        // std::cout<<elem<<std::endl;
         vectTest.push_back(elem);
     }
-    testByVect<T>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, vectTest);
+    testByVect<T>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, vectTest, true);
 }
 
 class BufferTestSuite : public CxxTest::TestSuite
@@ -113,18 +140,20 @@ class BufferTestSuite : public CxxTest::TestSuite
         // Test packing of data in buffer
         void testBuffer(paroc_buffer* xp_bufferOut,  paroc_combox* xp_comboxOut, paroc_connection* xp_connectionOut,
                         paroc_buffer* xp_bufferIn,   paroc_combox* xp_comboxIn,  paroc_connection* xp_connectionIn){
+
+
             TS_TRACE("test int");
-            testByType<int>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, -INT_MAX, INT_MAX / 2, 23456999);
+            testByType<int>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, INT_MIN, INT_MAX, INT_MAX / ITER);
             TS_TRACE("test uint");
-            testByType<unsigned int>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, 0, INT_MAX, 23456999);
+            testByType<unsigned int>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, 0, UINT_MAX, UINT_MAX / ITER);
             TS_TRACE("test long");
-            testByType<long>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, -INT_MAX, INT_MAX / 2, 23456);
+            testByType<long>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, _LONG_MIN, _LONG_MAX, _LONG_MAX / ITER);
             TS_TRACE("test ulong");
-            testByType<unsigned long>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, 0, INT_MAX, 23456);
-            TS_TRACE("test short TODO fix");
-            // testByType<short>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, -SHRT_MAX / 2, SHRT_MAX / 2, 23456);
-            TS_TRACE("test ushort TODO fix");
-            // testByType<unsigned short>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, 0, SHRT_MAX / 2, 26);
+            testByType<unsigned long>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, 0, _ULONG_MAX, _ULONG_MAX / ITER);
+            TS_TRACE("test short fix");
+            testByType<short>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, SHRT_MIN, SHRT_MAX, SHRT_MAX / ITER);
+            TS_TRACE("test ushort fix");
+            testByType<unsigned short>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, 0, USHRT_MAX, USHRT_MAX / ITER);
             TS_TRACE("test char");
             testByType<char>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, -127, 128, 1);
             TS_TRACE("test uchar");
@@ -140,7 +169,7 @@ class BufferTestSuite : public CxxTest::TestSuite
             // TS_TRACE("test bool");
             // testByVect<bool>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, m_vectBool);
             TS_TRACE("test string");
-            testByVect<std::string>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, m_vectString);
+            testByVect<std::string>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, m_vectString, false);
             // TS_TRACE("test char array");
             // testByVect<const char*>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, m_vectCharArr);
         }
