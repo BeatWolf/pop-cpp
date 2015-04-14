@@ -19,7 +19,9 @@
 #define _LONG_MIN      (-_LONG_MAX - 1L)
 #define _ULONG_MAX    4294967295UL
 
+// TODO: See if we keep the combox test here (and fix)
 
+/// Test the serialization of all values in vector
 template<typename T>void testByVect(paroc_buffer* xp_bufferOut, paroc_combox* xp_comboxOut, paroc_connection* xp_connectionOut, 
                                     paroc_buffer* xp_bufferIn,  paroc_combox* xp_comboxIn,  paroc_connection* xp_connectionIn, const std::vector<T>& x_vect, bool x_testArray){
 
@@ -73,12 +75,12 @@ template<typename T>void testByVect(paroc_buffer* xp_bufferOut, paroc_combox* xp
     }
 }
 
+/// Fill a vector and test
 template<typename T>void testByType(paroc_buffer* xp_bufferOut, paroc_combox* xp_comboxOut, paroc_connection* xp_connectionOut, 
                                     paroc_buffer* xp_bufferIn,  paroc_combox* xp_comboxIn,  paroc_connection* xp_connectionIn, const T& x_min, const T& x_max, const T& x_incr){
     std::vector<T> vectTest;
     for(T elem = x_min ; elem < x_max - 2 * x_incr ; elem += x_incr) // this break condition avoids inf loops due to overflows
     {
-        // std::cout<<elem<<std::endl;
         vectTest.push_back(elem);
     }
     testByVect<T>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, vectTest, true);
@@ -102,7 +104,7 @@ class BufferTestSuite : public CxxTest::TestSuite
             m_bufferRaw = new paroc_buffer_raw();
             m_bufferXdr = new paroc_buffer_xdr();
 
-            m_vectBool   = {0,1};
+            m_vectBool   = {0,1,1,0,1,1,1,1,0,0,1};
             m_vectString = {"Etenim si attendere diligenter, existimare vere de omni hac causa ",
             "volueritis, sic constituetis, iudices, nec descensurum quemquam ad hanc accusationem fuisse, cui, utrum vellet, liceret, nec, ",
             "cum descendisset, quicquam habiturum spei fuisse, nisi alicuius intolerabili libidine et nimis acerbo odio n",
@@ -150,9 +152,9 @@ class BufferTestSuite : public CxxTest::TestSuite
             testByType<long>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, _LONG_MIN, _LONG_MAX, _LONG_MAX / ITER);
             TS_TRACE("test ulong");
             testByType<unsigned long>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, 0, _ULONG_MAX, _ULONG_MAX / ITER);
-            TS_TRACE("test short fix");
+            TS_TRACE("test short");
             testByType<short>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, SHRT_MIN, SHRT_MAX, SHRT_MAX / ITER);
-            TS_TRACE("test ushort fix");
+            TS_TRACE("test ushort");
             testByType<unsigned short>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, 0, USHRT_MAX, USHRT_MAX / ITER);
             TS_TRACE("test char");
             testByType<char>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, -127, 128, 1);
@@ -167,11 +169,9 @@ class BufferTestSuite : public CxxTest::TestSuite
 
 
             // TS_TRACE("test bool");
-            // testByVect<bool>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, m_vectBool);
+            // testByVect<bool>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, m_vectBool, true);
             TS_TRACE("test string");
             testByVect<std::string>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, m_vectString, false);
-            // TS_TRACE("test char array");
-            // testByVect<const char*>(xp_bufferOut, xp_comboxOut, xp_connectionOut, xp_bufferIn, xp_comboxIn, xp_connectionIn, m_vectCharArr);
         }
 
         void testBufferRaw(){
