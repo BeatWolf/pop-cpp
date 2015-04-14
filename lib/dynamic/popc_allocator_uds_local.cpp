@@ -30,7 +30,7 @@
  * @param od          Object description used for allocation
  * @return A string representation of the access-point
  */
-std::string popc_allocator_uds_local::allocate(std::string& objectname, paroc_od& od) {
+std::string popc_allocator_uds_local::allocate(const std::string& objectname, const paroc_od& od) {
     LOG_DEBUG_T("UDS", "Allocate %s (local)", objectname.c_str());
 
     std::string codefile;
@@ -204,7 +204,7 @@ std::string popc_allocator_uds_local::allocate(std::string& objectname, paroc_od
  * @param nb          The number of object to allocate in the group
  * @return A pointer to a single combox connected with the group
  */
-paroc_combox* popc_allocator_uds_local::allocate_group(std::string& objectname, paroc_od& od, int nb) {
+paroc_combox* popc_allocator_uds_local::allocate_group(const std::string& objectname, const paroc_od& od, int nb) {
 
     /* Allocation process here */
 

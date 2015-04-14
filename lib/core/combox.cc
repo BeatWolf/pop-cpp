@@ -75,7 +75,7 @@ const char* paroc_combox::PROTOCOL_SEPARATOR = "://";
 
 
 paroc_combox::paroc_combox() {
-    defaultFact = paroc_buffer_factory_finder::GetInstance()->FindFactory("xdr");
+    defaultFact = paroc_buffer_factory_finder::GetInstance()->FindFactory("xdr"); // TODO LW: This should probably by in system
     if(defaultFact == nullptr) {
         LOG_ERROR("POP-C++ Error: can not find the xdr buffer factory!");
     }

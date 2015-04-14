@@ -104,7 +104,7 @@ int CodeMgr::QueryCode(const std::string &objname, const std::string &platform, 
 }
 
 int CodeMgr::GetPlatform(const std::string &objname, std::string &platform) {
-    platform=nullptr;
+    platform = "";
     auto n=info.size();
 
     int i;

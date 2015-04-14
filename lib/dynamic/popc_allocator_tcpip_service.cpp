@@ -32,7 +32,7 @@
  * @param od          Object description used for allocation
  * @return A string representation of the access-point
  */
-std::string socket_allocator_service::allocate(std::string& objectname, paroc_od& od) {
+std::string socket_allocator_service::allocate(const std::string& objectname, const paroc_od& od) {
     paroc_accesspoint jobcontact, objectaddress, remotejobcontact;
 
     //Exec using JobMgr interface...
@@ -43,7 +43,7 @@ std::string socket_allocator_service::allocate(std::string& objectname, paroc_od
         if(mgr.GetPlatform(objectname, platforms)<=0) {
             paroc_exception::paroc_throw(OBJECT_EXECUTABLE_NOTFOUND, "No platform found", objectname.c_str());
         }
-        od.setPlatforms(platforms);
+        // od.setPlatforms(platforms);
     }
     //Global Resource management system --> Find a resource.
 
@@ -96,7 +96,7 @@ std::string socket_allocator_service::allocate(std::string& objectname, paroc_od
  * @param nb          The number of object to allocate in the group
  * @return A pointer to a single combox connected with the group
  */
-paroc_combox* socket_allocator_service::allocate_group(std::string& objectname, paroc_od& od, int nb) {
+paroc_combox* socket_allocator_service::allocate_group(const std::string& objectname, const paroc_od& od, int nb) {
 
     /* Allocation process here */
 
